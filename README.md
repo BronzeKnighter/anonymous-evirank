@@ -19,13 +19,6 @@ EviRank is intentionally released here as the model code only. The repository do
 - `MODEL_CARD.md`: intended use, limitations, and ethical notes.
 - `RELEASE_CHECKLIST.md`: pre-upload safety checklist.
 
-## What Is Not Included
-
-- Competing model implementations.
-- Raw reviewer-ranking benchmark data.
-- SPECTER2 embedding caches, trained weights, output runs, or checkpoints.
-- Author-identifying paths, private notes, or paper drafts.
-
 ## Expected Data Layout
 
 Place benchmark files under `data/` or provide paths explicitly. The processed EviRank format is:
