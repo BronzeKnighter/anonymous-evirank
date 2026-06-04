@@ -1,0 +1,15 @@
+section,stat_name,raw_value,rounded_value
+confuseval,queries,510.0,510.0
+confuseval,papers,10848.0,10848.0
+confuseval,annotation_units,5100.0,5100.0
+confuseval,strict_positive_pairs,618.0,618.0
+confuseval,confirmed_hard_negatives,2821.0,2821.0
+confuseval,ambiguous,2138.0,2138.0
+confuseval,possible_positive,141.0,141.0
+confuseval,avg_hard_negatives_per_query,5.531373,5.5314
+confuseval,queries_with_at_least_3_hard_negatives,506.0,506.0
+confuseval,double_reviewed_rows,3249.0,3249.0
+confuseval,double_review_coverage,0.637059,63.71
+confuseval,agreement,0.811942,0.8119
+confuseval,cohens_kappa,0.622976,0.623
+confuseval,strong_conflicts_hn_vs_pp,63.0,63.0

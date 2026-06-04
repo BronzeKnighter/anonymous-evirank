@@ -1,0 +1,12 @@
+[
+  {
+    "id": "q1",
+    "title": "Graph neural methods for paper reviewer matching",
+    "abstract": "We study evidence-aware ranking for assigning scientific reviewers to submitted manuscripts."
+  },
+  {
+    "id": "q2",
+    "title": "Biomedical relation extraction with contrastive encoders",
+    "abstract": "This paper proposes a contrastive model for extracting biomedical relations from scientific abstracts."
+  }
+]

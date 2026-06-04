@@ -1,0 +1,6 @@
+numpy>=1.23
+torch>=2.0
+transformers>=4.35
+adapters>=0.2
+tqdm>=4.65
+

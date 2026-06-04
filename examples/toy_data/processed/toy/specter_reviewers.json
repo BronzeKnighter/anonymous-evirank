@@ -1,0 +1,42 @@
+[
+  {
+    "id": "r_graph",
+    "papers": [
+      {
+        "id": "rp1",
+        "title": "Reviewer recommendation using graph neural networks",
+        "abstract": "We model paper-reviewer assignment as a graph ranking problem."
+      },
+      {
+        "id": "rp2",
+        "title": "Evidence selection for expert finding",
+        "abstract": "This work studies query-specific evidence for expert recommendation."
+      }
+    ]
+  },
+  {
+    "id": "r_bio",
+    "papers": [
+      {
+        "id": "rp3",
+        "title": "Biomedical information extraction from scientific text",
+        "abstract": "We extract biomedical entities and relations from abstracts."
+      },
+      {
+        "id": "rp4",
+        "title": "Contrastive learning for biomedical encoders",
+        "abstract": "A contrastive encoder improves biomedical document representations."
+      }
+    ]
+  },
+  {
+    "id": "r_ir",
+    "papers": [
+      {
+        "id": "rp5",
+        "title": "Dense retrieval for scientific literature search",
+        "abstract": "We compare dense retrieval and lexical retrieval for scientific search."
+      }
+    ]
+  }
+]

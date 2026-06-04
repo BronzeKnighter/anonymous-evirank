@@ -1,0 +1,20 @@
+setting,dataset,method,metric,value
+standard,KDD,EviRank,NDCG@10,0.5461
+standard,KDD,EviRank,Soft MAP@10,0.4340
+standard,KDD,EviRank,Hard MAP@10,0.2648
+standard,NeurIPS,EviRank,NDCG@10,0.8863
+standard,NeurIPS,EviRank,Soft MAP@10,0.7353
+standard,NeurIPS,EviRank,Hard MAP@10,0.4830
+standard,SIGIR,EviRank,NDCG@10,0.3614
+standard,SIGIR,EviRank,Soft MAP@10,0.0468
+standard,SIGIR,EviRank,Hard MAP@10,0.0329
+standard,SciRepEval,EviRank,NDCG@10,0.7450
+standard,SciRepEval,EviRank,Soft MAP@10,0.6699
+standard,SciRepEval,EviRank,Hard MAP@10,0.4583
+confuseval,ConfusEval,EviRank,Pairwise win,0.3746
+confuseval,ConfusEval,EviRank,Positive MRR,0.4191
+confuseval,ConfusEval,EviRank,Mean violations,3.3000
+confuseval,ConfusEval,EviRank,Positive R@1,0.2412
+confuseval,ConfusEval,EviRank,Hard NDCG@3,0.3183
+confuseval,ConfusEval,EviRank,Hard MAP@3,0.2838
+

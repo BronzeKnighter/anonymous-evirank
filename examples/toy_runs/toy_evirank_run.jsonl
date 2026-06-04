@@ -1,0 +1,2 @@
+{"query_id": "q1", "recommend_reviewer": ["r_graph", "r_ir", "r_bio"], "recommend_score": [0.91, 0.62, 0.21]}
+{"query_id": "q2", "recommend_reviewer": ["r_bio", "r_ir", "r_graph"], "recommend_score": [0.88, 0.55, 0.18]}

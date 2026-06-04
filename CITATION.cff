@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+message: "If you use EviRank, please cite the associated paper after the anonymous review period."
+title: "EviRank: Evidence-Grounded Reviewer Recommendation"
+authors:
+  - name: "Anonymous Authors"
+version: "0.1.0"
+date-released: "2026-06-04"
+license: "MIT"
+repository-code: "https://github.com/anonymous/evirank"
+abstract: "EviRank is an evidence-grounded retrieve-and-rerank model for paper-to-reviewer recommendation."

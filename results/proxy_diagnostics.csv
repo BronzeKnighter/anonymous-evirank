@@ -1,0 +1,10 @@
+panel,group,retriever_exposure_share,evirank_exposure_share,retriever_mean_label,evirank_mean_label,retriever_acceptable_share,evirank_acceptable_share,queries,retriever_acceptable_hit_rate,evirank_acceptable_hit_rate,retriever_hard_negative_top1_rate,evirank_hard_negative_top1_rate,retriever_mean_top1_label,evirank_mean_top1_label
+reviewer_productivity_top3,low_0_5,0.0085,0.0072,0.2308,0.5455,0.0769,0.1818,,,,,,,
+reviewer_productivity_top3,mid_6_19,0.0824,0.0745,0.5,0.7632,0.1667,0.2544,,,,,,,
+reviewer_productivity_top3,high_20,0.9092,0.9183,0.3515,0.4335,0.1172,0.1445,,,,,,,
+reviewer_career_stage_top3,early_2022plus,0.4484,0.4248,0.328,0.4246,0.1093,0.1415,,,,,,,
+reviewer_career_stage_top3,mid_2018_2021,0.3529,0.3601,0.3333,0.4465,0.1111,0.1488,,,,,,,
+reviewer_career_stage_top3,senior_pre2018,0.1987,0.215,0.4934,0.5471,0.1645,0.1824,,,,,,,
+query_topic_popularity_top3,tail,,,,,,,11.0,0.2727,0.3636,0.7273,0.7273,0.8182,0.8182
+query_topic_popularity_top3,mid,,,,,,,61.0,0.3607,0.4754,0.8197,0.7377,0.541,0.7869
+query_topic_popularity_top3,head,,,,,,,438.0,0.331,0.4224,0.8174,0.7626,0.5479,0.7123

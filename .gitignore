@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+
+# Environments
+.venv/
+venv/
+env/
+.env
+
+# Large or generated artifacts
+data/*
+output/*
+checkpoints/*
+weights/*
+*.pt
+*.pth
+*.ckpt
+*.npy
+*.npz
+*.h5
+*.hdf5
+*.pkl
+*.pickle
+
+# Keep lightweight placeholders
+!data/.gitkeep
+!output/.gitkeep
+!checkpoints/.gitkeep
+
+# Logs and temporary files
+*.log
+*.tmp
+*.aux
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+
+# Local editor files
+.vscode/
+.idea/
+

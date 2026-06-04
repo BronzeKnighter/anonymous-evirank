@@ -1,0 +1,54 @@
+{
+  "encoder": {
+    "model_name": "allenai/specter2_base",
+    "adapter_name": "allenai/specter2_proximity",
+    "pooling": "mean",
+    "view_mode": "multi",
+    "view_fuse": "mean",
+    "title_boost": 4,
+    "embedding_dim": 768
+  },
+  "stage1": {
+    "reviewer_pooling": "hybrid",
+    "reviewer_topk": 5,
+    "reviewer_alpha": 0.85,
+    "topk_candidates": 50,
+    "score_chunk": 8192
+  },
+  "features": {
+    "evidence_topk": 5,
+    "attention_tau": 0.2,
+    "include_interaction_features": true,
+    "include_lexical_features": true,
+    "include_attention_stats": true
+  },
+  "reranker": {
+    "head_mode": "dual",
+    "hidden": 128,
+    "dropout": 0.1,
+    "soft_pair_weight": 2.0,
+    "hard_pair_weight": 1.0,
+    "pointwise_weight": 0.25,
+    "listwise_weight": 0.4,
+    "final_soft_coef": 2.0,
+    "final_hard_coef": 1.0
+  },
+  "training": {
+    "folds": 5,
+    "epochs": 200,
+    "learning_rate": 0.001,
+    "weight_decay": 0.0001,
+    "max_pairs_per_query": 1024,
+    "negative_strategy": "mixed",
+    "hard_negative_feature": "lexical",
+    "hard_negative_topn": 32,
+    "random_negative_topn": 16,
+    "seed": 42
+  },
+  "fusion": {
+    "stage1_fuse_alpha": 0.2,
+    "stage1_fuse_feature": "top3",
+    "interpretation": "final_score = 0.2 * reranker_score + 0.8 * stage1_anchor after per-query normalization"
+  }
+}
+
