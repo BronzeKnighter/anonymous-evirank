@@ -5,7 +5,7 @@ import random
 import subprocess
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 
 import numpy as np
 import torch
@@ -36,8 +36,251 @@ from reranker_features import (
     load_json,
     load_temporal_query_reviewer_filter,
     load_vec_cache,
+    normalize_interaction_blocks,
+    normalize_interaction_weights,
     per_query_zscore,
 )
+
+FEATURE_MODULE_ALIASES = {
+    "interaction": "explicit_interaction",
+    "explicit": "explicit_interaction",
+    "explicit_interaction": "explicit_interaction",
+    "explicit_query_evidence_interaction": "explicit_interaction",
+    "query_evidence_interaction": "explicit_interaction",
+    "profile": "profile_context",
+    "profile_context": "profile_context",
+    "reviewer_profile_context": "profile_context",
+    "dense": "dense_semantic_stats",
+    "dense_stats": "dense_semantic_stats",
+    "dense_semantic": "dense_semantic_stats",
+    "dense_semantic_stats": "dense_semantic_stats",
+    "semantic_stats": "dense_semantic_stats",
+    "lexical": "lexical_matching",
+    "lexical_matching": "lexical_matching",
+    "lexical_evidence_matching": "lexical_matching",
+}
+
+FEATURE_GROUP_WEIGHT_ALIASES = {
+    "interaction": "interaction",
+    "explicit": "interaction",
+    "explicit_interaction": "interaction",
+    "query_evidence": "interaction",
+    "query_evidence_interaction": "interaction",
+    "profile": "profile",
+    "profile_context": "profile",
+    "reviewer_profile": "profile",
+    "reviewer_profile_context": "profile",
+    "dense": "dense",
+    "dense_stats": "dense",
+    "dense_semantic": "dense",
+    "dense_semantic_stats": "dense",
+    "semantic": "dense",
+    "semantic_stats": "dense",
+    "lex": "lexical",
+    "lexical": "lexical",
+    "lexical_matching": "lexical",
+    "lexical_evidence_matching": "lexical",
+}
+
+FEATURE_GROUP_TO_MODULE = {
+    "interaction": "explicit_interaction",
+    "profile": "profile_context",
+    "dense": "dense_semantic_stats",
+    "lexical": "lexical_matching",
+}
+
+VECTOR_BLOCK_WEIGHT_ALIASES = {
+    "profile": "profile",
+    "profile_vec": "profile",
+    "attn": "attn",
+    "attention": "attn",
+    "attn_vec": "attn",
+    "hadamard": "hadamard",
+    "prod": "hadamard",
+    "product": "hadamard",
+    "attn_hadamard": "hadamard",
+    "absdiff": "absdiff",
+    "abs_diff": "absdiff",
+    "diff": "absdiff",
+    "attn_absdiff": "absdiff",
+}
+
+FEATURE_GROUP_WEIGHT_DEFAULTS = {
+    "interaction": 1.0,
+    "profile": 1.0,
+    "dense": 1.0,
+    "lexical": 1.0,
+}
+
+VECTOR_BLOCK_WEIGHT_DEFAULTS = {
+    "profile": 1.0,
+    "attn": 1.0,
+    "hadamard": 1.0,
+    "absdiff": 1.0,
+}
+
+
+def _normalize_weight_key(raw: str, aliases: Dict[str, str], label: str) -> str:
+    key = str(raw or "").strip().lower().replace("-", "_").replace(" ", "_")
+    if key not in aliases:
+        raise ValueError(f"Unknown {label} weight key: {raw}")
+    return aliases[key]
+
+
+def parse_named_weights(raw, defaults: Dict[str, float], aliases: Dict[str, str], label: str) -> Dict[str, float]:
+    out = {str(k): float(v) for k, v in defaults.items()}
+    if raw is None or raw == "":
+        return out
+    if isinstance(raw, dict):
+        items = raw.items()
+        for key, value in items:
+            out[_normalize_weight_key(str(key), aliases, label)] = float(value)
+        return out
+
+    parts = [p.strip() for p in str(raw).split(",") if p.strip()]
+    if not parts:
+        return out
+    if all("=" not in p for p in parts):
+        keys = list(defaults.keys())
+        if len(parts) != len(keys):
+            raise ValueError(
+                f"{label} positional weights require {len(keys)} values ({','.join(keys)}), got {len(parts)}"
+            )
+        for key, value in zip(keys, parts):
+            out[key] = float(value)
+        return out
+
+    for part in parts:
+        if "=" not in part:
+            raise ValueError(f"Mixed named/positional {label} weights are not supported: {raw}")
+        key, value = part.split("=", 1)
+        out[_normalize_weight_key(key, aliases, label)] = float(value)
+    return out
+
+
+def parse_feature_group_weights(raw) -> Dict[str, float]:
+    return parse_named_weights(raw, FEATURE_GROUP_WEIGHT_DEFAULTS, FEATURE_GROUP_WEIGHT_ALIASES, "feature-group")
+
+
+def parse_vector_block_weights(raw) -> Dict[str, float]:
+    return parse_named_weights(raw, VECTOR_BLOCK_WEIGHT_DEFAULTS, VECTOR_BLOCK_WEIGHT_ALIASES, "vector-block")
+
+
+def normalize_feature_modules(raw: Optional[str]) -> List[str]:
+    modules: List[str] = []
+    for part in (raw or "").split(","):
+        key = part.strip().lower().replace("-", "_").replace(" ", "_")
+        if not key:
+            continue
+        if key not in FEATURE_MODULE_ALIASES:
+            raise ValueError(f"Unknown feature module: {part}")
+        canonical = FEATURE_MODULE_ALIASES[key]
+        if canonical not in modules:
+            modules.append(canonical)
+    return modules
+
+
+def feature_module_indices(spec: FeatureSpec, embedding_dim: int, modules: List[str]) -> np.ndarray:
+    if not modules:
+        return np.zeros((0,), dtype=np.int64)
+    layout = feature_layout(spec, embedding_dim)
+    idxs: Set[int] = set()
+
+    def add_item(item) -> None:
+        if item is None:
+            return
+        if isinstance(item, slice):
+            idxs.update(range(int(item.start), int(item.stop)))
+        elif isinstance(item, dict):
+            for v in item.values():
+                add_item(v)
+        elif isinstance(item, (list, tuple, range)):
+            for v in item:
+                add_item(v)
+        else:
+            idxs.add(int(item))
+
+    for module in modules:
+        if module == "explicit_interaction":
+            add_item(layout.get("attn_hadamard"))
+            add_item(layout.get("attn_absdiff"))
+        elif module == "profile_context":
+            add_item(layout.get("profile_sim"))
+            add_item(layout.get("log_npapers"))
+            add_item(layout.get("profile_vec"))
+        elif module == "dense_semantic_stats":
+            add_item(layout.get("topk"))
+            add_item(layout.get("logmeanexp"))
+            add_item(layout.get("softmax"))
+            add_item(layout.get("attn_sim"))
+            add_item(layout.get("attn_max_weight"))
+        elif module == "lexical_matching":
+            add_item(layout.get("lexical"))
+        else:
+            raise ValueError(f"Unknown normalized feature module: {module}")
+    return np.asarray(sorted(idxs), dtype=np.int64)
+
+
+def mask_feature_modules(x: np.ndarray, mask_indices: np.ndarray) -> np.ndarray:
+    if x.size == 0 or mask_indices.size == 0:
+        return x
+    out = np.array(x, copy=True)
+    valid = mask_indices[(mask_indices >= 0) & (mask_indices < out.shape[1])]
+    if valid.size:
+        out[:, valid] = 0.0
+    return out
+
+
+def _vector_block_indices(spec: FeatureSpec, embedding_dim: int, block: str) -> np.ndarray:
+    layout = feature_layout(spec, embedding_dim)
+    block_to_layout = {
+        "profile": "profile_vec",
+        "attn": "attn_vec",
+        "hadamard": "attn_hadamard",
+        "absdiff": "attn_absdiff",
+    }
+    name = block_to_layout[block]
+    item = layout.get(name)
+    if item is None:
+        return np.zeros((0,), dtype=np.int64)
+    if isinstance(item, slice):
+        return np.arange(int(item.start), int(item.stop), dtype=np.int64)
+    return np.asarray([int(item)], dtype=np.int64)
+
+
+def build_feature_scale_vector(
+    spec: FeatureSpec,
+    embedding_dim: int,
+    *,
+    feature_group_weights,
+    vector_block_weights,
+) -> np.ndarray:
+    dim = int(feature_dim(spec, embedding_dim))
+    scale = np.ones((dim,), dtype=np.float32)
+    group_weights = parse_feature_group_weights(feature_group_weights)
+    vector_weights = parse_vector_block_weights(vector_block_weights)
+
+    for group, weight in group_weights.items():
+        module = FEATURE_GROUP_TO_MODULE[group]
+        idxs = feature_module_indices(spec, embedding_dim, [module])
+        valid = idxs[(idxs >= 0) & (idxs < dim)]
+        if valid.size:
+            scale[valid] *= float(weight)
+
+    for block, weight in vector_weights.items():
+        idxs = _vector_block_indices(spec, embedding_dim, block)
+        valid = idxs[(idxs >= 0) & (idxs < dim)]
+        if valid.size:
+            scale[valid] *= float(weight)
+    return scale
+
+
+def apply_feature_scale(x: np.ndarray, scale: np.ndarray) -> np.ndarray:
+    if x.size == 0:
+        return x
+    if scale.size != x.shape[1]:
+        raise ValueError(f"Feature scale length ({scale.size}) does not match feature dim ({x.shape[1]})")
+    return (x * scale.reshape(1, -1)).astype(np.float32, copy=False)
 
 
 def parse_k_list(raw: str) -> List[int]:
@@ -60,6 +303,8 @@ def build_feature_spec(args: argparse.Namespace) -> FeatureSpec:
         include_interaction_features=not bool(int(args.legacy_features)),
         include_lexical_features=not bool(int(args.disable_lexical_features)),
         evidence_topk=int(args.evidence_topk),
+        interaction_blocks=normalize_interaction_blocks(args.interaction_blocks),
+        interaction_weights=normalize_interaction_weights(args.interaction_weights, len(normalize_interaction_blocks(args.interaction_blocks))),
     )
 
 
@@ -192,6 +437,18 @@ def _write_run_manifest(
             "include_interaction_features": bool(spec.include_interaction_features),
             "include_lexical_features": bool(spec.include_lexical_features),
             "evidence_topk": int(spec.evidence_topk),
+            "interaction_blocks": list(spec.interaction_blocks),
+            "interaction_weights": [float(x) for x in spec.interaction_weights],
+            "masked_feature_modules": normalize_feature_modules(getattr(args, "mask_feature_modules", "")),
+            "masked_feature_count": int(feature_module_indices(
+                spec,
+                int(embedding_dim),
+                normalize_feature_modules(getattr(args, "mask_feature_modules", "")),
+            ).size),
+        },
+        "feature_scaling": {
+            "feature_group_weights": parse_feature_group_weights(getattr(args, "feature_group_weights", "")),
+            "vector_block_weights": parse_vector_block_weights(getattr(args, "vector_block_weights", "")),
         },
         "embedding_dim": int(embedding_dim),
         "feat_dim": int(feat_dim_value),
@@ -353,7 +610,8 @@ def train_one_fold(
             pos_hard = [i for i, v in enumerate(y_hard) if v == 1]
             neg_hard = [i for i, v in enumerate(y_hard) if v == 0]
 
-            difficulty = _hardneg_difficulty(row["x"], spec, embedding_dim, hard_neg_feature)
+            difficulty_x = row.get("x_hardneg", row["x"])
+            difficulty = _hardneg_difficulty(difficulty_x, spec, embedding_dim, hard_neg_feature)
             neg_soft_sel = select_negative_indices(neg_soft, difficulty=difficulty, strategy=neg_strategy, hard_topn=hard_neg_topn, rand_topn=rand_neg_topn, rng=rng)
             neg_hard_sel = select_negative_indices(neg_hard, difficulty=difficulty, strategy=neg_strategy, hard_topn=hard_neg_topn, rand_topn=rand_neg_topn, rng=rng)
 
@@ -454,6 +712,45 @@ def main() -> None:
     ap.add_argument("--disable_lexical_features", type=int, default=0, help="Disable lexical/evidence features.")
     ap.add_argument("--evidence_topk", type=int, default=DEFAULT_SPEC.evidence_topk)
     ap.add_argument(
+        "--interaction_blocks",
+        default=",".join(DEFAULT_SPEC.interaction_blocks),
+        help=(
+            "Comma-separated embedding interaction blocks. "
+            "Options: query,profile,attn,hadamard,absdiff,profile_hadamard,profile_absdiff. "
+            "Default reproduces the previous concatenation: profile,attn,hadamard,absdiff."
+        ),
+    )
+    ap.add_argument(
+        "--interaction_weights",
+        default=",".join(str(x) for x in DEFAULT_SPEC.interaction_weights),
+        help="Comma-separated scalar weights for interaction_blocks. Use one value to share a weight across all blocks.",
+    )
+    ap.add_argument(
+        "--feature_group_weights",
+        default="",
+        help=(
+            "Feature-group scaling after per-query z-score. Named or positional values for "
+            "interaction,profile,dense,lexical. Example: interaction=1.0,profile=1.0,dense=0.75,lexical=1.25."
+        ),
+    )
+    ap.add_argument(
+        "--vector_block_weights",
+        default="",
+        help=(
+            "Vector-block scaling after per-query z-score. Named or positional values for "
+            "profile,attn,hadamard,absdiff. Example: profile=1.0,attn=1.0,hadamard=1.25,absdiff=0.75."
+        ),
+    )
+    ap.add_argument(
+        "--mask_feature_modules",
+        default="",
+        help=(
+            "Comma-separated paper-level feature modules to zero out after feature construction. "
+            "Options: explicit_interaction, profile_context, dense_semantic_stats, lexical_matching. "
+            "Masking preserves the judged pool, hard-negative mining features, and Stage1 anchor."
+        ),
+    )
+    ap.add_argument(
         "--neg_strategy",
         choices=["random", "hard", "mixed"],
         default="mixed",
@@ -502,6 +799,14 @@ def main() -> None:
 
     spec = build_feature_spec(args)
     feat_dim_value = feature_dim(spec, embedding_dim)
+    feature_scale = build_feature_scale_vector(
+        spec,
+        embedding_dim,
+        feature_group_weights=args.feature_group_weights,
+        vector_block_weights=args.vector_block_weights,
+    )
+    masked_feature_modules = normalize_feature_modules(args.mask_feature_modules)
+    masked_feature_indices = feature_module_indices(spec, embedding_dim, masked_feature_modules)
 
     q_rows = []
     for q in queries:
@@ -536,7 +841,9 @@ def main() -> None:
         if x_raw.shape[0] == 0:
             continue
         stage1_anchor = extract_stage1_anchor_scores(x_raw, spec, embedding_dim, str(args.stage1_fuse_feature))
-        x = per_query_zscore(x_raw)
+        x_full = per_query_zscore(x_raw)
+        x_scaled = apply_feature_scale(x_full, feature_scale)
+        x = mask_feature_modules(x_scaled, masked_feature_indices)
 
         kept_set = set(kept)
         soft_rel = [rid for rid, s in rels.items() if int(s) >= 2 and str(rid) in kept_set]
@@ -549,6 +856,7 @@ def main() -> None:
             {
                 "qid": qid,
                 "x": x,
+                "x_hardneg": x_full,
                 "cands": kept,
                 "stage1_anchor": stage1_anchor,
                 "y_soft": labels_soft,

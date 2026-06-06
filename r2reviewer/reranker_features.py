@@ -2,7 +2,7 @@ import json
 import math
 import re
 from collections import Counter, defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
 
@@ -16,6 +16,67 @@ STOPWORDS = {
     "we", "our", "you", "your", "they", "their",
 }
 
+INTERACTION_BLOCK_ALIASES = {
+    "q": "query",
+    "query_vec": "query",
+    "query": "query",
+    "profile": "profile",
+    "profile_vec": "profile",
+    "attn": "attn",
+    "attention": "attn",
+    "attn_vec": "attn",
+    "hadamard": "hadamard",
+    "prod": "hadamard",
+    "product": "hadamard",
+    "attn_hadamard": "hadamard",
+    "absdiff": "absdiff",
+    "abs_diff": "absdiff",
+    "diff": "absdiff",
+    "attn_absdiff": "absdiff",
+    "profile_hadamard": "profile_hadamard",
+    "profile_prod": "profile_hadamard",
+    "profile_absdiff": "profile_absdiff",
+    "profile_diff": "profile_absdiff",
+}
+
+DEFAULT_INTERACTION_BLOCKS = ["profile", "attn", "hadamard", "absdiff"]
+
+
+def normalize_interaction_blocks(blocks: Optional[List[str]] | str | None) -> List[str]:
+    if blocks is None:
+        return list(DEFAULT_INTERACTION_BLOCKS)
+    if isinstance(blocks, str):
+        raw_items = [x.strip() for x in blocks.split(",")]
+    else:
+        raw_items = [str(x).strip() for x in blocks]
+    out: List[str] = []
+    for item in raw_items:
+        if not item:
+            continue
+        key = item.lower().replace("-", "_")
+        if key not in INTERACTION_BLOCK_ALIASES:
+            raise ValueError(f"Unknown interaction block: {item}")
+        canonical = INTERACTION_BLOCK_ALIASES[key]
+        if canonical not in out:
+            out.append(canonical)
+    return out or list(DEFAULT_INTERACTION_BLOCKS)
+
+
+def normalize_interaction_weights(weights: Optional[List[float]] | str | None, n_blocks: int) -> List[float]:
+    if weights is None:
+        vals: List[float] = []
+    elif isinstance(weights, str):
+        vals = [float(x.strip()) for x in weights.split(",") if x.strip()]
+    else:
+        vals = [float(x) for x in weights]
+    if not vals:
+        vals = [1.0] * int(n_blocks)
+    if len(vals) == 1 and int(n_blocks) > 1:
+        vals = vals * int(n_blocks)
+    if len(vals) != int(n_blocks):
+        raise ValueError(f"interaction_weights length ({len(vals)}) must match interaction_blocks length ({n_blocks})")
+    return vals
+
 
 @dataclass
 class FeatureSpec:
@@ -27,6 +88,8 @@ class FeatureSpec:
     include_interaction_features: bool = True
     include_lexical_features: bool = True
     evidence_topk: int = 3
+    interaction_blocks: List[str] = field(default_factory=lambda: list(DEFAULT_INTERACTION_BLOCKS))
+    interaction_weights: List[float] = field(default_factory=lambda: [1.0] * len(DEFAULT_INTERACTION_BLOCKS))
 
 
 LEGACY_SPEC = FeatureSpec(
@@ -199,7 +262,7 @@ def scalar_feature_dim(spec: FeatureSpec) -> int:
 def feature_dim(spec: FeatureSpec, embedding_dim: int) -> int:
     dim = scalar_feature_dim(spec)
     if spec.include_interaction_features:
-        dim += int(embedding_dim) * 4
+        dim += int(embedding_dim) * len(normalize_interaction_blocks(spec.interaction_blocks))
     return dim
 
 
@@ -237,8 +300,17 @@ def feature_layout(spec: FeatureSpec, embedding_dim: int) -> Dict[str, object]:
 
     if spec.include_interaction_features:
         emb_dim = int(embedding_dim)
-        for name in ("profile_vec", "attn_vec", "attn_hadamard", "attn_absdiff"):
-            layout[name] = slice(cursor, cursor + emb_dim)
+        block_to_name = {
+            "query": "query_vec",
+            "profile": "profile_vec",
+            "attn": "attn_vec",
+            "hadamard": "attn_hadamard",
+            "absdiff": "attn_absdiff",
+            "profile_hadamard": "profile_hadamard",
+            "profile_absdiff": "profile_absdiff",
+        }
+        for block in normalize_interaction_blocks(spec.interaction_blocks):
+            layout[block_to_name[block]] = slice(cursor, cursor + emb_dim)
             cursor += emb_dim
 
     layout["total_dim"] = cursor
@@ -256,6 +328,8 @@ def feature_spec_from_meta(raw: Dict, *, feat_dim_hint: int | None = None, embed
         include_interaction_features=bool(raw.get("include_interaction_features", DEFAULT_SPEC.include_interaction_features)),
         include_lexical_features=bool(raw.get("include_lexical_features", DEFAULT_SPEC.include_lexical_features)),
         evidence_topk=int(raw.get("evidence_topk", DEFAULT_SPEC.evidence_topk)),
+        interaction_blocks=normalize_interaction_blocks(raw.get("interaction_blocks", DEFAULT_SPEC.interaction_blocks)),
+        interaction_weights=normalize_interaction_weights(raw.get("interaction_weights", DEFAULT_SPEC.interaction_weights), len(normalize_interaction_blocks(raw.get("interaction_blocks", DEFAULT_SPEC.interaction_blocks)))),
     )
 
     if feat_dim_hint is not None and embedding_dim is not None and int(feat_dim_hint) == feature_dim(spec, int(embedding_dim)):
@@ -538,7 +612,18 @@ def compute_features_for_query_candidates(
             feats.extend(lexical_block)
 
         if spec.include_interaction_features:
-            inter = torch.cat([profile_vec, attn_vec, q * attn_vec, torch.abs(q - attn_vec)], dim=0)
+            blocks = normalize_interaction_blocks(spec.interaction_blocks)
+            weights = normalize_interaction_weights(spec.interaction_weights, len(blocks))
+            block_map = {
+                "query": q,
+                "profile": profile_vec,
+                "attn": attn_vec,
+                "hadamard": q * attn_vec,
+                "absdiff": torch.abs(q - attn_vec),
+                "profile_hadamard": q * profile_vec,
+                "profile_absdiff": torch.abs(q - profile_vec),
+            }
+            inter = torch.cat([float(w) * block_map[name] for name, w in zip(blocks, weights)], dim=0)
             feats.extend(inter.detach().cpu().numpy().astype(np.float32).tolist())
 
         rows.append(np.asarray(feats, dtype=np.float32))

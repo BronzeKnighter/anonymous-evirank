@@ -20,7 +20,24 @@
     "attention_tau": 0.2,
     "include_interaction_features": true,
     "include_lexical_features": true,
-    "include_attention_stats": true
+    "include_attention_stats": true,
+    "interaction_blocks": ["profile", "attn", "hadamard", "absdiff"],
+    "interaction_weights": [1.0, 1.0, 1.0, 1.0]
+  },
+  "feature_scaling": {
+    "feature_group_weights": {
+      "interaction": 1.0,
+      "profile": 1.0,
+      "dense": 0.75,
+      "lexical": 1.0
+    },
+    "vector_block_weights": {
+      "profile": 1.0,
+      "attn": 1.0,
+      "hadamard": 1.25,
+      "absdiff": 1.0
+    },
+    "interpretation": "Feature scaling is applied after per-query z-score normalization and before the MLP reranker. These weights correspond to the validation-selected locked EviRank configuration."
   },
   "reranker": {
     "head_mode": "dual",
@@ -51,4 +68,3 @@
     "interpretation": "final_score = 0.2 * reranker_score + 0.8 * stage1_anchor after per-query normalization"
   }
 }
-

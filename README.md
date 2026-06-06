@@ -2,7 +2,7 @@
 
 Anonymous implementation of **EviRank**, an evidence-grounded retrieve-and-rerank model for reviewer recommendation.
 
-EviRank is intentionally released here as the model code only. The repository does not include competing model implementations, raw benchmark data, model checkpoints, private annotations, external repositories, or cached embeddings.
+This repository packages the core EviRank model implementation, evaluation utilities, configuration files, and lightweight result summaries used for anonymous artifact inspection.
 
 ## What Is Included
 
@@ -11,6 +11,8 @@ EviRank is intentionally released here as the model code only. The repository do
 - `r2reviewer/reranker_features.py`: query-specific evidence selection and feature construction.
 - `r2reviewer/pairwise_reranker.py`: dual-head MLP reranker.
 - `r2reviewer/cv_train_reranker.py`: query-level cross-validation training and out-of-fold inference.
+- `r2reviewer/eval_feature_knockout_oof.py`: frozen feature-knockout sensitivity evaluation for saved full-model checkpoints.
+- `r2reviewer/rerank_pairwise_mlp.py`: inference utility for applying a trained reranker to a candidate pool.
 - `tools/eval_paper_metrics.py`: standard reviewer-ranking metrics.
 - `tools/eval_confuseval.py`: hard-negative diagnostic metrics for ConfusEval-style judged pools.
 - `tools/preprocess_paper_data.py`: conversion utility for qrel-style reviewer-ranking data.
@@ -53,6 +55,24 @@ bash scripts/run_evirank_cv.sh nips kdd sigir scirepeval
 
 The script first computes Stage-1 semantic scores and then trains the EviRank reranker with query-level out-of-fold evaluation.
 
+The default script arguments match the locked EviRank configuration used in the
+paper: top-5 evidence papers, Stage-1 top-3 score anchoring with reranker weight
+0.2, feature-group weights `interaction=1.0,profile=1.0,dense=0.75,lexical=1.0`,
+and vector-block weights `profile=1.0,attn=1.0,hadamard=1.25,absdiff=1.0`.
+These values are also recorded in `configs/evirank_locked_standard.json`.
+
+## Run Frozen Feature-Knockout Diagnostics
+
+After training a full EviRank model and saving fold checkpoints, run:
+
+```bash
+CKPT_DIR=output/artifacts/kdd_evirank_oof_<timestamp>/checkpoints \
+bash scripts/run_feature_knockout.sh kdd
+```
+
+This keeps the trained full reranker fixed and masks one feature group at
+inference time. It is a sensitivity diagnostic, not a retrained ablation.
+
 ## Evaluate a Saved Run
 
 ```bash
@@ -84,6 +104,10 @@ bash examples/run_toy_eval.sh
 ## Reproducibility Notes
 
 The main locked configuration used in the paper is summarized in `configs/evirank_locked_standard.json`.
+Lightweight paper-aligned result summaries are provided in:
+
+- `results/evirank_results_only.csv`
+- `results/evirank_feature_knockout_sensitivity.csv`
 
 This anonymous release is designed to make the model implementation inspectable and runnable once users provide the corresponding benchmark data.
 

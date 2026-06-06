@@ -1,20 +1,40 @@
 setting,dataset,method,metric,value
-standard,KDD,EviRank,NDCG@10,0.5461
-standard,KDD,EviRank,Soft MAP@10,0.4340
-standard,KDD,EviRank,Hard MAP@10,0.2648
-standard,NeurIPS,EviRank,NDCG@10,0.8863
-standard,NeurIPS,EviRank,Soft MAP@10,0.7353
-standard,NeurIPS,EviRank,Hard MAP@10,0.4830
-standard,SIGIR,EviRank,NDCG@10,0.3614
-standard,SIGIR,EviRank,Soft MAP@10,0.0468
-standard,SIGIR,EviRank,Hard MAP@10,0.0329
-standard,SciRepEval,EviRank,NDCG@10,0.7450
-standard,SciRepEval,EviRank,Soft MAP@10,0.6699
-standard,SciRepEval,EviRank,Hard MAP@10,0.4583
-confuseval,ConfusEval,EviRank,Pairwise win,0.3746
-confuseval,ConfusEval,EviRank,Positive MRR,0.4191
-confuseval,ConfusEval,EviRank,Mean violations,3.3000
-confuseval,ConfusEval,EviRank,Positive R@1,0.2412
-confuseval,ConfusEval,EviRank,Hard NDCG@3,0.3183
-confuseval,ConfusEval,EviRank,Hard MAP@3,0.2838
-
+standard,KDD,EviRank,NDCG@5,0.5087
+standard,KDD,EviRank,NDCG@10,0.5705
+standard,KDD,EviRank,Soft P@5,0.4230
+standard,KDD,EviRank,Hard P@5,0.1759
+standard,KDD,EviRank,Soft MAP@10,0.4385
+standard,KDD,EviRank,Hard MAP@5,0.2192
+standard,KDD,EviRank,Hard MAP@10,0.2702
+standard,NeurIPS,EviRank,NDCG@5,0.8580
+standard,NeurIPS,EviRank,NDCG@10,0.8840
+standard,NeurIPS,EviRank,Soft P@5,0.6059
+standard,NeurIPS,EviRank,Hard P@5,0.2824
+standard,NeurIPS,EviRank,Soft MAP@10,0.7359
+standard,NeurIPS,EviRank,Hard MAP@5,0.4214
+standard,NeurIPS,EviRank,Hard MAP@10,0.4724
+standard,SIGIR,EviRank,NDCG@5,0.4475
+standard,SIGIR,EviRank,NDCG@10,0.3993
+standard,SIGIR,EviRank,Soft P@5,0.5452
+standard,SIGIR,EviRank,Hard P@5,0.2466
+standard,SIGIR,EviRank,Soft MAP@10,0.0445
+standard,SIGIR,EviRank,Hard MAP@5,0.0232
+standard,SIGIR,EviRank,Hard MAP@10,0.0312
+standard,SciRepEval,EviRank,NDCG@5,0.7095
+standard,SciRepEval,EviRank,NDCG@10,0.7596
+standard,SciRepEval,EviRank,Soft P@5,0.6953
+standard,SciRepEval,EviRank,Hard P@5,0.3589
+standard,SciRepEval,EviRank,Soft MAP@10,0.6702
+standard,SciRepEval,EviRank,Hard MAP@5,0.3765
+standard,SciRepEval,EviRank,Hard MAP@10,0.4607
+confuseval,ConfusEval,EviRank,Pairwise win,0.3765
+confuseval,ConfusEval,EviRank,Positive MRR,0.4214
+confuseval,ConfusEval,EviRank,Mean violations,3.2902
+confuseval,ConfusEval,EviRank,Positive R@1,0.2451
+confuseval,ConfusEval,EviRank,Hard NDCG@3,0.3190
+confuseval,ConfusEval,EviRank,Hard MAP@3,0.2854
+confuseval_gain,ConfusEval,EviRank,Delta pairwise win,0.1002
+confuseval_gain,ConfusEval,EviRank,Delta positive MRR,0.0591
+confuseval_gain,ConfusEval,EviRank,Delta positive R@1,0.0588
+confuseval_gain,ConfusEval,EviRank,Delta Hard MAP@3,0.0668
+confuseval_gain,ConfusEval,EviRank,Violation reduction,0.1480

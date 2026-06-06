@@ -39,6 +39,11 @@ ATTENTION_TAU="${ATTENTION_TAU:-0.2}"
 EVIDENCE_TOPK="${EVIDENCE_TOPK:-5}"
 STAGE1_FUSE_ALPHA="${STAGE1_FUSE_ALPHA:-0.2}"
 STAGE1_FUSE_FEATURE="${STAGE1_FUSE_FEATURE:-top3}"
+INTERACTION_BLOCKS="${INTERACTION_BLOCKS:-profile,attn,hadamard,absdiff}"
+INTERACTION_WEIGHTS="${INTERACTION_WEIGHTS:-1,1,1,1}"
+FEATURE_GROUP_WEIGHTS="${FEATURE_GROUP_WEIGHTS:-interaction=1.0,profile=1.0,dense=0.75,lexical=1.0}"
+VECTOR_BLOCK_WEIGHTS="${VECTOR_BLOCK_WEIGHTS:-profile=1.0,attn=1.0,hadamard=1.25,absdiff=1.0}"
+MASK_FEATURE_MODULES="${MASK_FEATURE_MODULES:-}"
 
 TITLE_BOOST="${TITLE_BOOST:-4}"
 POOLING="${POOLING:-mean}"
@@ -116,6 +121,11 @@ run_dataset() {
     --rand_neg_topn "$RAND_NEG_TOPN" \
     --stage1_fuse_alpha "$STAGE1_FUSE_ALPHA" \
     --stage1_fuse_feature "$STAGE1_FUSE_FEATURE" \
+    --interaction_blocks "$INTERACTION_BLOCKS" \
+    --interaction_weights "$INTERACTION_WEIGHTS" \
+    --feature_group_weights "$FEATURE_GROUP_WEIGHTS" \
+    --vector_block_weights "$VECTOR_BLOCK_WEIGHTS" \
+    --mask_feature_modules "$MASK_FEATURE_MODULES" \
     --eval_k "$EVAL_K" \
     --out_oof "${art_dir}/${ds}_oof_rec_scored.jsonl" \
     --out_pairs "${art_dir}/${ds}_oof_pairs.jsonl" \
@@ -133,4 +143,3 @@ run_dataset() {
 for ds in "${DATASETS[@]}"; do
   run_dataset "$ds"
 done
-
