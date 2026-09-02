@@ -1,0 +1,5 @@
+dataset,queries,judged_pairs,stage2_seconds,seconds_per_query
+kdd,174,3480,9.041,0.0520
+nips,34,393,2.229,0.0655
+sigir,73,13797,11.936,0.1635
+scirepeval,107,1729,5.520,0.0516

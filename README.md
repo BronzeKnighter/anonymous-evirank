@@ -18,6 +18,8 @@ This repository packages the core EviRank model implementation, evaluation utili
 - `tools/preprocess_paper_data.py`: conversion utility for qrel-style reviewer-ranking data.
 - `examples/`: tiny synthetic files for checking data schemas and evaluation scripts.
 - `results/`: lightweight EviRank-only result summaries and diagnostic statistics.
+- `supplementary/`: paper-aligned calibration, significance, runtime,
+  annotation, comparability, and exposure details.
 - `MODEL_CARD.md`: intended use, limitations, and ethical notes.
 - `RELEASE_CHECKLIST.md`: pre-upload safety checklist.
 
@@ -108,6 +110,9 @@ Lightweight paper-aligned result summaries are provided in:
 
 - `results/evirank_results_only.csv`
 - `results/evirank_feature_knockout_sensitivity.csv`
+
+Full camera-ready supporting analyses are indexed in
+[`supplementary/README.md`](supplementary/README.md).
 
 This anonymous release is designed to make the model implementation inspectable and runnable once users provide the corresponding benchmark data.
 
