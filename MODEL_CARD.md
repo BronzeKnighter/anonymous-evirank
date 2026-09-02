@@ -4,7 +4,8 @@
 
 EviRank is an evidence-grounded retrieve-and-rerank model for reviewer recommendation. It first retrieves candidate reviewers using SPECTER2-style scientific document embeddings and then reranks candidates with query-specific evidence features derived from the candidate reviewer's publication history.
 
-This repository contains model code only. It does not redistribute benchmark data, private annotations, pretrained SPECTER2 weights, trained EviRank checkpoints, or competing baseline implementations.
+The repository also provides locked configurations, evaluation scripts,
+lightweight result summaries, and paper-aligned supplementary analyses.
 
 ## Intended Use
 

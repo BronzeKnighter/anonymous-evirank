@@ -1,10 +1,18 @@
 cff-version: 1.2.0
-message: "If you use EviRank, please cite the associated paper after the anonymous review period."
-title: "EviRank: Evidence-Grounded Reviewer Recommendation"
+message: "If you use EviRank, please cite the associated ICDM 2026 paper."
+title: "EviRank: Evidence-Grounded Reviewer Recommendation via Dynamic Query-Specific Profiles"
 authors:
-  - name: "Anonymous Authors"
-version: "0.1.0"
-date-released: "2026-06-04"
+  - name: "Reyncher"
+    email: "xhw99493133@gmail.com"
+version: "1.0.0"
+date-released: "2026-09-02"
 license: "MIT"
-repository-code: "https://github.com/anonymous/evirank"
+repository-code: "https://github.com/BronzeKnighter/evirank"
 abstract: "EviRank is an evidence-grounded retrieve-and-rerank model for paper-to-reviewer recommendation."
+preferred-citation:
+  type: conference-paper
+  title: "EviRank: Evidence-Grounded Reviewer Recommendation via Dynamic Query-Specific Profiles"
+  authors:
+    - name: "Reyncher"
+  collection-title: "2026 IEEE International Conference on Data Mining (ICDM)"
+  year: 2026

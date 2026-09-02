@@ -1,8 +1,28 @@
 # EviRank
 
-Anonymous implementation of **EviRank**, an evidence-grounded retrieve-and-rerank model for reviewer recommendation.
+**EviRank: Evidence-Grounded Reviewer Recommendation via Dynamic Query-Specific Profiles**
 
-This repository packages the core EviRank model implementation, evaluation utilities, configuration files, and lightweight result summaries used for anonymous artifact inspection.
+- **Venue:** IEEE International Conference on Data Mining (ICDM 2026)
+- **Authors:** Reyncher
+- **Status:** Accepted
+- **Code and supplementary materials:** this repository
+- **Contact:** [xhw99493133@gmail.com](mailto:xhw99493133@gmail.com)
+
+EviRank is an evidence-grounded retrieve-and-rerank model for reviewer
+recommendation. This repository contains the implementation, evaluation tools,
+locked configuration, lightweight results, and supplementary analyses reported
+with the paper.
+
+## Supplementary Materials
+
+- [Calibration sensitivity](supplementary/S3_calibration_sensitivity.md)
+- [Statistical significance](supplementary/S4_significance_tests.md)
+- [Runtime and scalability](supplementary/S5_runtime_scalability.md)
+- [ConfusEval annotation protocol](supplementary/S1_confuseval_annotation_protocol.md)
+- [Annotation and adjudication examples](supplementary/S2_annotation_examples.md)
+- [Exposure and deployment diagnostics](supplementary/S6_exposure_diagnostics.md)
+- [Baseline comparability](supplementary/S7_baseline_comparability.md)
+- [Complete supplementary index](supplementary/README.md)
 
 ## What Is Included
 
@@ -38,8 +58,11 @@ See `docs/DATA_FORMAT.md` for schemas.
 
 ## Installation
 
+The reported runs used Python 3.12.3, PyTorch 2.10.0 with CUDA 12.8,
+Transformers 4.51.3, and one NVIDIA RTX PRO 6000 Blackwell GPU (96 GB).
+
 ```bash
-conda create -n evirank python=3.10 -y
+conda create -n evirank python=3.12 -y
 conda activate evirank
 pip install -r requirements.txt
 ```
@@ -103,6 +126,43 @@ The toy example does not train the model. It verifies the JSON schemas and evalu
 bash examples/run_toy_eval.sh
 ```
 
+## Reproduce Paper Results
+
+After preparing the licensed benchmark files described in
+[`docs/DATA_FORMAT.md`](docs/DATA_FORMAT.md), use the following entrypoints.
+
+**Table III: standard benchmark results**
+
+```bash
+bash scripts/run_evirank_cv.sh all
+```
+
+**Table IV: ConfusEval evaluation**
+
+```bash
+BENCHMARK_DIR=data/confuseval \
+RUN=output/evirank_confuseval.jsonl \
+bash scripts/eval_confuseval.sh
+```
+
+**Table V: frozen feature-knockout diagnostics**
+
+```bash
+CKPT_DIR=output/artifacts/<dataset_run>/checkpoints \
+bash scripts/run_feature_knockout.sh <dataset>
+```
+
+**Calibration sensitivity and statistical significance**
+
+The reported calibration values are in
+[`supplementary/calibration_sensitivity.csv`](supplementary/calibration_sensitivity.csv).
+For paired per-query results, run:
+
+```bash
+python tools/paired_permutation_test.py <paired_metrics.csv> \
+  --left baseline --right evirank --permutations 100000 --seed 42
+```
+
 ## Reproducibility Notes
 
 The main locked configuration used in the paper is summarized in `configs/evirank_locked_standard.json`.
@@ -111,11 +171,9 @@ Lightweight paper-aligned result summaries are provided in:
 - `results/evirank_results_only.csv`
 - `results/evirank_feature_knockout_sensitivity.csv`
 
-Full camera-ready supporting analyses are indexed in
+Complete supporting analyses are indexed in
 [`supplementary/README.md`](supplementary/README.md).
-
-This anonymous release is designed to make the model implementation inspectable and runnable once users provide the corresponding benchmark data.
 
 ## Citation
 
-During anonymous review, cite this repository as an anonymous implementation package. After acceptance or public release, update `CITATION.cff` with the final paper metadata.
+Please use the metadata in [`CITATION.cff`](CITATION.cff).

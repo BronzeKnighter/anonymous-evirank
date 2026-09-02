@@ -8,7 +8,7 @@ Use this checklist before pushing the repository to GitHub.
 - `tools/`: preprocessing and evaluation utilities.
 - `scripts/`: runnable entrypoints.
 - `configs/`: locked model configuration.
-- `docs/`: data format, reproducibility, and anonymization notes.
+- `docs/`: data format and reproducibility notes.
 - `examples/`: toy data and toy evaluation scripts.
 - `results/`: lightweight EviRank-only summary tables.
 - `README.md`, `LICENSE`, `CITATION.cff`, `MODEL_CARD.md`, `.gitignore`.
@@ -20,13 +20,13 @@ Use this checklist before pushing the repository to GitHub.
 - Paper drafts, PDFs, DOCX files, review notes, or submission metadata.
 - External repositories or competing baseline implementations.
 - Files containing absolute local paths or local usernames.
-- Files containing author names, affiliations, emails, or self-identifying comments during anonymous review.
+- Credentials, tokens, private hostnames, or unintended personal data.
 
 ## Pre-Push Checks
 
 ```bash
 find . -type f -size +1M
-rg -n "(local-user-name|absolute-local-path|private-project-name|author-email|paper-draft-file)" .
+rg -n "(/home/|C:\\\\Users|api[_-]?key|access[_-]?token|secret|password)" .
 python -m py_compile $(find r2reviewer tools -name "*.py")
 git status --short
 ```
