@@ -6,7 +6,7 @@
 - **Authors:** Reyncher
 - **Status:** Accepted
 - **Code and supplementary materials:** this repository
-- **Contact:** [xhw99493133@gmail.com](mailto:xhw99493133@gmail.com)
+- **Contact:** [xhw99493133@dlmu.edu.cn](mailto:xhw99493133@dlmu.edu.cn)
 
 EviRank is an evidence-grounded retrieve-and-rerank model for reviewer
 recommendation. This repository contains the implementation, evaluation tools,
